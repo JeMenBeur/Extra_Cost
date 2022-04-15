@@ -40,29 +40,6 @@ Public Class Form1
         Dim chconnect As String = "Dsn=APMXAC;uid=APMXAC;pwd=MXAC"
         Dim CnnAs400 = New OdbcConnection(chconnect)
 
-        ''Récupère le numéro de commande, codefournisseur, date commande, devise et nom fournisseur des commandes faites après le premier septembre et dont le code fournisseur fait parti du tableau
-        'Dim strSql = "Select POM.ORDNO, POM.VNDNR, POM.ACTDT, POM.CURID, V.VNAME from amflib6.POMAST as POM
-        '            Join amflib6.VENNAM as V on V.VNDNR = POM.VNDNR
-        '            Join amflib6.POITEM as POI on POI.ORDNO = POM.ORDNO
-        '            Where POI.DUEDT > 1210901 and POM.VNDNR in (" & Join(arrayCodeFournisseur.ToArray, ", ") & ")"
-        'Dim Command As New OdbcCommand(strSql, CnnAs400)
-        'CnnAs400.Open()
-        'Dim RsAs400 As OdbcDataReader = Command.ExecuteReader()
-        'Dim arrayListCommande = New ArrayList()
-        'Do While RsAs400.Read()
-        '    numeroCommande = RsAs400.GetValue(0).ToString
-        '    codeFournisseur = RsAs400.GetValue(1).ToString
-        '    dateCommande = RsAs400.GetValue(2).ToString
-        '    devise = RsAs400.GetValue(3).ToString
-        '    nomFournisseur = RsAs400.GetValue(4).ToString
-
-        '    Dim arrayCommande = {numeroCommande, codeFournisseur, nomFournisseur, dateCommande, devise}
-        '    arrayListCommande.Add(arrayCommande)
-        'Loop
-
-        'RsAs400.Close()
-        'CnnAs400.Close()
-
         Dim arrayList = New ArrayList()
         Dim arrayListLigneDetail = New ArrayList()
 
@@ -72,10 +49,10 @@ Public Class Form1
                     POI.DOKDT from amflib6.POITEM as POI
                     join amflib6.POMAST as POM on POM.ORDNO = POI.ORDNO
                     join amflib6.VENNAM as V on V.VNDNR = POM.VNDNR
-                    where POI.DUEDT > 1210901 and POM.VNDNR in (" & Join(arrayCodeFournisseur.ToArray, ", ") & ")"
-        Dim Command2 As New OdbcCommand(strSql, CnnAs400)
+                    where POI.DUEDT > 1210901 and POM.VNDNR in (" & Join(arrayCodeFournisseur.ToArray, ", ") & ") and POI.STAIC <> 99"
+        Dim Command As New OdbcCommand(strSql, CnnAs400)
         CnnAs400.Open()
-        Dim RsAs400 = Command2.ExecuteReader()
+        Dim RsAs400 = Command.ExecuteReader()
 
         Do While RsAs400.Read()
             article = RsAs400.GetValue(0).ToString
@@ -95,54 +72,50 @@ Public Class Form1
 
             Dim arrayLigne = {numeroCommande, nomFournisseur, dateCommande, devise, article, quantiteCommandeOrigine, quantiteDeviation, prixUnitaireEuro, prixUnitaireDevise,
                                     situation, dateStock, dateQuai}
-            'Dim arrayLigne = {value(0), value(1), value(4), value(2), value(3), article, quantiteCommandeOrigine, quantiteDeviation, prixUnitaireEuro, prixUnitaireDevise,
-            '                    situation, dateStock, dateQuai}
             arrayList.Add(arrayLigne)
         Loop
 
         RsAs400.Close()
         CnnAs400.Close()
-        'Next
 
-        ''Récupère toutes les informations des articles qui ont été commandés par 2 fournisseur différents parmis la liste des codes fournisseurs du tableau
-        'For Each value In arrayList
-        '    numeroCommande = value(0)
-        '    codeFournisseur = value(1)
-        '    nomFournisseur = value(2)
-        '    dateCommande = value(3)
-        '    devise = value(4)
-        '    article = value(5)
-        '    strSql = "Select POI.ITNBR, POI.QTYOR, POI.BLCOD, POI.QTDEV, POI.ACTPR, POI.ACTPL, POI.STAIC, POI.DUEDT, 
-        '            POI.DOKDT from amflib6.POITEM as POI
-        '            join amflib6.POMAST as POM on POM.ORDNO = POI.ORDNO
-        '            where POI.ITNBR = '" & article & "' and POI.DUEDT > 1210901 and POM.VNDNR <> " & codeFournisseur & " and POM.VNDNR in (" & Join(arrayCodeFournisseur.ToArray, ", ") & ")"
-        '    Dim Command3 As New OdbcCommand(strSql, CnnAs400)
-        '    CnnAs400.Open()
-        '    RsAs400 = Command3.ExecuteReader()
+        'Récupère toutes les lignes des commandes récupéré dans la précédente requête
+        'For Each value In arrayListCommande
+        strSql = "Select POHI.ITNBR, POHS.ORDNO, POHS.ACTDT, POHS.CURID, V.VNAME, POHI.ITNBR, POHI.QTYOR, POHI.BLCOD, POHI.QTDEV, POHI.ACTPR, POHI.ACTPL, POHI.STAIC, POHI.DUEDT, 
+                    POHI.DOKDT from amflib6.POHISTI as POHI
+                    join amflib6.POHSTM as POHS on POHS.ORDNO = POHI.ORDNO
+                    join amflib6.VENNAM as V on V.VNDNR = POHS.VNDNR
+                    where POHI.DUEDT > 1210901 and POHS.VNDNR in (" & Join(arrayCodeFournisseur.ToArray, ", ") & ") and POHI.STAIC <> 99"
+        Dim Command2 As New OdbcCommand(strSql, CnnAs400)
+        CnnAs400.Open()
+        RsAs400 = Command2.ExecuteReader()
 
-        '    Do While RsAs400.Read()
-        '        article = RsAs400.GetValue(0).ToString
-        '        quantiteCommandeOrigine = If(RsAs400.GetValue(1).ToString <> "", RsAs400.GetValue(1).ToString, 0)
-        '        blanketItemCode = RsAs400.GetValue(2).ToString
-        '        quantiteDeviation = If(RsAs400.GetValue(3).ToString <> "", RsAs400.GetValue(3).ToString, 0)
-        '        prixUnitaireEuro = If(RsAs400.GetValue(4).ToString <> "", RsAs400.GetValue(4).ToString, 0)
-        '        prixUnitaireDevise = If(RsAs400.GetValue(5).ToString <> "", RsAs400.GetValue(5).ToString, 0)
-        '        situation = RsAs400.GetValue(6).ToString
-        '        dateStock = RsAs400.GetValue(7).ToString
-        '        dateQuai = RsAs400.GetValue(8).ToString
+        Do While RsAs400.Read()
+            article = RsAs400.GetValue(0).ToString
+            numeroCommande = RsAs400.GetValue(1).ToString
+            dateCommande = RsAs400.GetValue(2).ToString
+            devise = RsAs400.GetValue(3).ToString
+            nomFournisseur = RsAs400.GetValue(4).ToString
+            article = RsAs400.GetValue(5).ToString
+            quantiteCommandeOrigine = If(RsAs400.GetValue(6).ToString <> "", RsAs400.GetValue(6).ToString, 0)
+            blanketItemCode = RsAs400.GetValue(7).ToString
+            quantiteDeviation = If(RsAs400.GetValue(8).ToString <> "", RsAs400.GetValue(8).ToString, 0)
+            prixUnitaireEuro = If(RsAs400.GetValue(9).ToString <> "", RsAs400.GetValue(9).ToString, 0)
+            prixUnitaireDevise = If(RsAs400.GetValue(10).ToString <> "", RsAs400.GetValue(10).ToString, 0)
+            situation = RsAs400.GetValue(11).ToString
+            dateStock = RsAs400.GetValue(12).ToString
+            dateQuai = RsAs400.GetValue(13).ToString
 
-        '        Dim arrayLigne = {numeroCommande, nomFournisseur, dateCommande, devise, article, quantiteCommandeOrigine, quantiteDeviation, prixUnitaireEuro, prixUnitaireDevise,
-        '                            situation, dateStock, dateQuai}
-        '        arrayListLigneDetail.Add(arrayLigne)
-        '    Loop
+            Dim arrayLigne = {numeroCommande, nomFournisseur, dateCommande, devise, article, quantiteCommandeOrigine, quantiteDeviation, prixUnitaireEuro, prixUnitaireDevise,
+                                    situation, dateStock, dateQuai}
+            arrayList.Add(arrayLigne)
+        Loop
 
-        '    RsAs400.Close()
-        '    CnnAs400.Close()
-        'Next
+        RsAs400.Close()
+        CnnAs400.Close()
 
         For Each value In arrayList
-            If (value(4).ToString.Trim = "THA92162248") Then
-                MsgBox("OK")
+            If (value(4).ToString.Trim = "THA92097000") Then
+                MsgBox("ok")
             End If
             Dim _MyListViewItem As ListViewItem = ListView1.Items.Add(value(0))
             With _MyListViewItem

@@ -40,7 +40,8 @@ Partial Class Form1
         'ListView1
         '
         Me.ListView1.Columns.AddRange(New System.Windows.Forms.ColumnHeader() {Me.numeroCommande, Me.nomFournisseur, Me.dateCommande, Me.devise, Me.article, Me.quantiteCommandeOrigine, Me.quantiteDeviation, Me.prixUnitaireEuro, Me.PrixUnitaireDevise, Me.situation, Me.dateStock, Me.dateQuai})
-        Me.ListView1.Location = New System.Drawing.Point(12, 63)
+        Me.ListView1.FullRowSelect = True
+        Me.ListView1.Location = New System.Drawing.Point(-10, 62)
         Me.ListView1.Name = "ListView1"
         Me.ListView1.Size = New System.Drawing.Size(1234, 485)
         Me.ListView1.TabIndex = 0

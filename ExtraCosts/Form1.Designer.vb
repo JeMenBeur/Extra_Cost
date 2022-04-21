@@ -24,6 +24,7 @@ Partial Class Form1
     Private Sub InitializeComponent()
         Me.ListView1 = New System.Windows.Forms.ListView()
         Me.numeroCommande = New System.Windows.Forms.ColumnHeader()
+        Me.poste = New System.Windows.Forms.ColumnHeader()
         Me.nomFournisseur = New System.Windows.Forms.ColumnHeader()
         Me.dateCommande = New System.Windows.Forms.ColumnHeader()
         Me.devise = New System.Windows.Forms.ColumnHeader()
@@ -39,11 +40,11 @@ Partial Class Form1
         '
         'ListView1
         '
-        Me.ListView1.Columns.AddRange(New System.Windows.Forms.ColumnHeader() {Me.numeroCommande, Me.nomFournisseur, Me.dateCommande, Me.devise, Me.article, Me.quantiteCommandeOrigine, Me.quantiteDeviation, Me.prixUnitaireEuro, Me.PrixUnitaireDevise, Me.situation, Me.dateStock, Me.dateQuai})
+        Me.ListView1.Columns.AddRange(New System.Windows.Forms.ColumnHeader() {Me.numeroCommande, Me.poste, Me.nomFournisseur, Me.dateCommande, Me.devise, Me.article, Me.quantiteCommandeOrigine, Me.quantiteDeviation, Me.prixUnitaireEuro, Me.PrixUnitaireDevise, Me.situation, Me.dateStock, Me.dateQuai})
         Me.ListView1.FullRowSelect = True
-        Me.ListView1.Location = New System.Drawing.Point(-10, 62)
+        Me.ListView1.Location = New System.Drawing.Point(12, 62)
         Me.ListView1.Name = "ListView1"
-        Me.ListView1.Size = New System.Drawing.Size(1234, 485)
+        Me.ListView1.Size = New System.Drawing.Size(1298, 485)
         Me.ListView1.TabIndex = 0
         Me.ListView1.UseCompatibleStateImageBehavior = False
         Me.ListView1.View = System.Windows.Forms.View.Details
@@ -52,6 +53,10 @@ Partial Class Form1
         '
         Me.numeroCommande.Text = "commande"
         Me.numeroCommande.Width = 100
+        '
+        'poste
+        '
+        Me.poste.Text = "poste"
         '
         'nomFournisseur
         '
@@ -110,7 +115,7 @@ Partial Class Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(7.0!, 15.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
-        Me.ClientSize = New System.Drawing.Size(1258, 609)
+        Me.ClientSize = New System.Drawing.Size(1322, 609)
         Me.Controls.Add(Me.ListView1)
         Me.Name = "Form1"
         Me.Text = "Form1"
@@ -131,4 +136,5 @@ Partial Class Form1
     Friend WithEvents situation As ColumnHeader
     Friend WithEvents dateStock As ColumnHeader
     Friend WithEvents dateQuai As ColumnHeader
+    Friend WithEvents poste As ColumnHeader
 End Class

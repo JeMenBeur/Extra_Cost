@@ -26,3 +26,6 @@ D:\Users\piraulj\source\repos\ExtraCosts\ExtraCosts\obj\Debug\net6.0-windows\ref
 D:\Users\piraulj\source\repos\ExtraCosts\ExtraCosts\obj\Debug\net6.0-windows\ExtraCosts.pdb
 D:\Users\piraulj\source\repos\ExtraCosts\ExtraCosts\obj\Debug\net6.0-windows\ExtraCosts.genruntimeconfig.cache
 D:\Users\piraulj\source\repos\ExtraCosts\ExtraCosts\obj\Debug\net6.0-windows\ref\ExtraCosts.dll
+D:\Users\piraulj\source\repos\ExtraCosts\ExtraCosts\obj\Debug\net6.0-windows\Interop.Microsoft.Office.Core.dll
+D:\Users\piraulj\source\repos\ExtraCosts\ExtraCosts\obj\Debug\net6.0-windows\Interop.Microsoft.Office.Interop.Excel.dll
+D:\Users\piraulj\source\repos\ExtraCosts\ExtraCosts\obj\Debug\net6.0-windows\ExtraCosts.vbproj.ResolveComReference.cache

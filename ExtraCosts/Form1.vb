@@ -50,6 +50,8 @@ Public Class Form1
         Dim arrayListAllArticlesWithoutCodeFournisseur = New ArrayList()
         Dim arrayListAllArticlesCodeFournisseur = New ArrayList()
         Dim arrayListArticles = New ArrayList()
+        Dim arrayListArticlesSansHistorique = New ArrayList()
+        Dim arrayListArticlesHistorique = New ArrayList()
         Dim arrayListArticlesDetail = New ArrayList()
         Dim arrayListAllArticlesDetailWithoutCodeFournisseur = New ArrayList()
         Dim arrayListAllArticlesDetailCodeFournisseur = New ArrayList()
@@ -58,8 +60,10 @@ Public Class Form1
 
         Dim strSql = "SELECT POI.ITNBR
                     FROM amflib6.POITEM as POI
-                    JOIN amflib6.POMAST as POM on POM.ORDNO = POI.ORDNO
-                    WHERE POI.DUEDT > 1210901 and POI.DUEDT < 1220426 and POM.VNDNR in (" & Join(arrayCodeFournisseur.ToArray, ", ") & ") and POI.STAIC <> 99
+                    WHERE POI.DUEDT > 1210901 and POI.DUEDT < 1220426 and POI.STAIC <> 99 and 
+                        POI.ITNBR not in (SELECT POHI.ITNBR
+                            FROM amflib6.POHISTI as POHI
+                            WHERE POHI.DUEDT > 1210901 and POHI.DUEDT < 1220426 and POHI.STAIC <> 99)
                     GROUP BY POI.ITNBR
                     HAVING COUNT(POI.ITNBR) = 1"
 
@@ -68,33 +72,62 @@ Public Class Form1
         Dim RsAs400 = Command7.ExecuteReader()
 
         Do While RsAs400.Read()
-            article = RsAs400.GetValue(0).ToString
-            arrayListArticles.Add(article)
+            For Each fournisseur In arrayCodeFournisseur
+                If codeFournisseur = fournisseur Then
+                    article = RsAs400.GetValue(0).ToString
+                    arrayListArticlesSansHistorique.Add({article, codeFournisseur})
+                End If
+            Next
         Loop
 
         RsAs400.Close()
         CnnAs400.Close()
 
-        For Each codeFournisseur In arrayCodeFournisseur
-            strSql = "SELECT POHI.ITNBR
-                    FROM amflib6.POHISTI as POHI
-                    JOIN amflib6.POHSTM as POHS on POHS.ORDNO = POHI.ORDNO
-                    WHERE POHI.DUEDT > 1210901 and POHI.DUEDT < 1220426 and POHS.VNDNR = '" & codeFournisseur & "' and 
-                        POHI.ITNBR not in ('" & Join(arrayListArticles.ToArray, "', '") & "') and POHI.STAIC <> 99
-                    GROUP BY POHI.ITNBR
-                    HAVING COUNT(POHI.ITNBR) = 1"
 
-            Dim Command8 As New OdbcCommand(strSql, CnnAs400)
-            CnnAs400.Open()
-            RsAs400 = Command8.ExecuteReader()
+        strSql = "SELECT POHI.ITNBR, POHS.VNDNR
+                FROM amflib6.POHISTI as POHI
+                JOIN amflib6.POHSTM as POHS on POHS.ORDNO = POHI.ORDNO
+                WHERE POHI.DUEDT > 1210901 and POHI.DUEDT < 1220426 and POHI.STAIC <> 99
+                    and POHI.ITNBR not in (SELECT POI.ITNBR
+                        FROM amflib6.POITEM as POI
+                        JOIN amflib6.POMAST as POM on POM.ORDNO = POI.ORDNO
+                        WHERE POI.DUEDT > 1210901 and POI.DUEDT < 1220426 and POI.STAIC <> 99)
+                GROUP BY POHI.ITNBR, POHS.VNDNR
+                HAVING COUNT(POHI.ITNBR) = 1"
 
-            Do While RsAs400.Read()
-                article = RsAs400.GetValue(0).ToString
-                arrayListArticles.Add(article)
-            Loop
+        Dim Command8 As New OdbcCommand(strSql, CnnAs400)
+        CnnAs400.Open()
+        RsAs400 = Command8.ExecuteReader()
 
-            RsAs400.Close()
-            CnnAs400.Close()
+        Do While RsAs400.Read()
+            For Each fournisseur In arrayCodeFournisseur
+                If codeFournisseur = fournisseur Then
+                    article = RsAs400.GetValue(0).ToString
+                    arrayListArticlesHistorique.Add({article, codeFournisseur})
+                End If
+            Next
+        Loop
+
+        RsAs400.Close()
+        CnnAs400.Close()
+
+        For Each value In arrayListArticlesSansHistorique
+            article = value(0)
+            codeFournisseur = value(1)
+            For j = 0 To arrayListArticlesHistorique.Count - 1
+                If arrayListArticlesHistorique(j)(0) = article Then
+                    arrayListArticlesHistorique(j)(0) = ""
+                    arrayListArticlesHistorique(j)(1) = ""
+                End If
+            Next
+        Next
+
+        For Each value In arrayListArticlesSansHistorique
+            arrayListArticles.Add(value)
+        Next
+
+        For Each value In arrayListArticlesHistorique
+            arrayListArticles.Add(value)
         Next
 
 
@@ -105,7 +138,7 @@ Public Class Form1
                     FROM amflib6.POITEM as POI
                     JOIN amflib6.POMAST as POM on POM.ORDNO = POI.ORDNO
                     JOIN amflib6.VENNAM as V on V.VNDNR = POM.VNDNR
-                    WHERE POI.DUEDT > 1210901 and POI.DUEDT < 1220426 and POI.STAIC <> 99 and POI.ITNBR = '" & value & "' and POM.VNDNR in (" & Join(arrayCodeFournisseur.ToArray, ", ") & ")
+                    WHERE POI.DUEDT > 1210901 and POI.DUEDT < 1220426 and POI.STAIC <> 99 and POI.ITNBR = '" & value(0) & "' and POM.VNDNR = '" & value(1) & "'
                     GROUP BY POI.ITNBR, POM.ORDNO, POM.ACTDT, POM.CURID, V.VNAME, POI.QTYOR, POI.BLCOD, POI.QTDEV, 
                         POI.EXTPR, POI.EXTPL, POI.STAIC, POI.DUEDT, POI.DOKDT, POM.VNDNR
                     HAVING COUNT(POI.ITNBR) = 1"
@@ -115,6 +148,9 @@ Public Class Form1
 
             Do While RsAs400.Read()
                 article = RsAs400.GetValue(0).ToString
+                If Trim(article) = "ALM3100855" Then
+                    MsgBox("EHHHHHHHH")
+                End If
                 numeroCommande = RsAs400.GetValue(1).ToString
                 dateCommande = RsAs400.GetValue(2).ToString
                 devise = RsAs400.GetValue(3).ToString
@@ -137,13 +173,14 @@ Public Class Form1
             RsAs400.Close()
             CnnAs400.Close()
 
+            '------------------REQUETE DE MERDE--------------------
             'Récupération les colonnes des articles ayant été réception au moins 2 fois depuis septembre et qui font parti de la liste des 17 codes fournisseurs
             strSql = "Select POHI.ITNBR, POHS.ORDNO, POHS.ACTDT, POHS.CURID, V.VNAME, POHI.QTYOR, POHI.BLCOD, POHI.QTDEV, POHI.EXTPR, POHI.EXTPL, POHI.STAIC, POHI.DUEDT, 
-                    POHI.DOKDT, POHS.VNDNR 
+                        POHI.DOKDT, POHS.VNDNR 
                     FROM amflib6.POHISTI as POHI
                     JOIN amflib6.POHSTM as POHS on POHS.ORDNO = POHI.ORDNO
                     JOIN amflib6.VENNAM as V on V.VNDNR = POHS.VNDNR
-                    WHERE POHI.DUEDT > 1210901 and POHI.DUEDT < 1220426 and POHS.VNDNR in (" & Join(arrayCodeFournisseur.ToArray, ", ") & ") and POHI.STAIC <> 99 and POHI.ITNBR = '" & value & "'
+                    WHERE POHI.DUEDT > 1210901 and POHI.DUEDT < 1220426 and POHS.VNDNR = '" & value(1) & "' and POHI.STAIC <> 99 and POHI.ITNBR = '" & value(0) & "'
                     GROUP BY POHI.ITNBR, POHS.ORDNO, POHS.ACTDT, POHS.CURID, V.VNAME, POHI.QTYOR, POHI.BLCOD, POHI.QTDEV, POHI.EXTPR, POHI.EXTPL, POHI.STAIC, POHI.DUEDT, 
                         POHI.DOKDT, POHS.VNDNR 
                     HAVING COUNT(POHI.ITNBR) = 1
@@ -154,6 +191,9 @@ Public Class Form1
 
             Do While RsAs400.Read()
                 article = RsAs400.GetValue(0).ToString
+                If Trim(article) = "ALM3100855" Then
+                    MsgBox("EHHHHHHHH")
+                End If
                 numeroCommande = RsAs400.GetValue(1).ToString
                 dateCommande = RsAs400.GetValue(2).ToString
                 devise = RsAs400.GetValue(3).ToString
@@ -182,7 +222,7 @@ Public Class Form1
                     FROM amflib6.POBLKT as POB
                     JOIN amflib6.POMAST as POM on POM.ORDNO = POB.ORDNO
                     JOIN amflib6.VENNAM as V on V.VNDNR = POM.VNDNR
-                    WHERE POB.DOKDT > 1210901 and POB.DOKDT < 1220426 and POM.VNDNR in (" & Join(arrayCodeFournisseur.ToArray, ", ") & ") and POB.STAIC <> 99 and POB.ITNBR = '" & value & "'
+                    WHERE POB.DOKDT > 1210901 and POB.DOKDT < 1220426 and POM.VNDNR = '" & value(1) & "' and POB.STAIC <> 99 and POB.ITNBR = '" & value(0) & "'
                     GROUP BY POB.ITNBR, POB.ORDNO, POB.RELQT, POB.RELDT, POB.STAIC, POB.DOKDT, POB.EXTPR, POB.EXTPL, V.VNDNR, V.VNAME, POM.CURID, POM.ACTDT
                     HAVING COUNT(POB.ITNBR) = 1
                     ORDER BY POB.ITNBR"
@@ -192,6 +232,9 @@ Public Class Form1
 
             Do While RsAs400.Read()
                 article = RsAs400.GetValue(0).ToString
+                If Trim(article) = "ALM3100855" Then
+                    MsgBox("EHHHHHHHH")
+                End If
                 numeroCommande = RsAs400.GetValue(1).ToString
                 quantiteCadence = If(RsAs400.GetValue(2).ToString <> "", RsAs400.GetValue(2).ToString, 0)
                 dateStockCadence = RsAs400.GetValue(3).ToString
@@ -218,7 +261,7 @@ Public Class Form1
                     FROM amflib6.POHISTB as POHI
                     JOIN amflib6.POHSTM as POHS on POHS.ORDNO = POHI.ORDNO
                     JOIN amflib6.VENNAM as V on V.VNDNR = POHS.VNDNR
-                    WHERE POHI.DOKDT > 1210901 and POHI.DOKDT < 1220426 and POHS.VNDNR in (" & Join(arrayCodeFournisseur.ToArray, ", ") & ") and POHI.STAIC <> 99 and POHI.ITNBR = '" & value & "'
+                    WHERE POHI.DOKDT > 1210901 and POHI.DOKDT < 1220426 and POHS.VNDNR = '" & value(1) & "' and POHI.STAIC <> 99 and POHI.ITNBR = '" & value(0) & "'
                     GROUP BY POHI.ITNBR, POHI.ORDNO, POHI.RELQT, POHI.RELDT, POHI.STAIC, POHI.DOKDT, POHI.EXTPR, POHI.EXTPL, V.VNDNR, V.VNAME, POHS.CURID, POHS.ACTDT
                     HAVING COUNT(POHI.ITNBR) = 1
                     ORDER BY POHI.ITNBR"
@@ -228,6 +271,9 @@ Public Class Form1
 
             Do While RsAs400.Read()
                 article = RsAs400.GetValue(0).ToString
+                If Trim(article) = "ALM3100855" Then
+                    MsgBox("EHHHHHHHH")
+                End If
                 numeroCommande = RsAs400.GetValue(1).ToString
                 quantiteCadence = If(RsAs400.GetValue(2).ToString <> "", RsAs400.GetValue(2).ToString, 0)
                 dateStockCadence = RsAs400.GetValue(3).ToString
@@ -274,30 +320,31 @@ Public Class Form1
             xlsfeuille.Cells(i, 12) = value(10)
             xlsfeuille.Cells(i, 13) = value(11)
             i += 1
-            If i = 10 Then
-                MsgBox(i)
-            End If
-            If i = 100 Then
-                MsgBox(i)
-            End If
-            If i = 500 Then
-                MsgBox(i)
-            End If
-            If i = 1000 Then
-                MsgBox(i)
-            End If
-            If i = 2000 Then
-                MsgBox(i)
-            End If
-            If i = 3000 Then
-                MsgBox(i)
-            End If
-            If i = 4000 Then
-                MsgBox(i)
-            End If
+            'If i = 10 Then
+            '    MsgBox(i)
+            'End If
+            'If i = 100 Then
+            '    MsgBox(i)
+            'End If
+            'If i = 500 Then
+            '    MsgBox(i)
+            'End If
+            'If i = 1000 Then
+            '    MsgBox(i)
+            'End If
+            'If i = 2000 Then
+            '    MsgBox(i)
+            'End If
+            'If i = 3000 Then
+            '    MsgBox(i)
+            'End If
+            'If i = 4000 Then
+            '    MsgBox(i)
+            'End If
         Next
 
-        xlsclasseur.SaveAs("d:\Classeur1.xlsx")
+
+        xlsclasseur.SaveAs("d:\Classeur2.xlsx")
         xls.Application.Quit()
         xls = Nothing
 

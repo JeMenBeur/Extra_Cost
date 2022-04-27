@@ -5,24 +5,12 @@ Public Class Form1
     Private sheetXls As Worksheet
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        Dim article As String
-        Dim numeroCommande As String
-        Dim codeFournisseur As String
-        Dim nomFournisseur As String
-        Dim devise As String
-        Dim dateCommande As String
-        Dim quantiteCommandeOrigine As Double
-        Dim quantiteDeviation As Double
-        Dim blanketItemCode As String
-        Dim prixUnitaireEuro As Double
-        Dim prixUnitaireDevise As Double
-        Dim situation As String
-        Dim dateStock As String
-        Dim dateQuai As String
+        Dim article, numeroCommande, codeFournisseur, nomFournisseur, devise, dateCommande As String
+        Dim quantiteCommandeOrigine, quantiteDeviation As Double
+        Dim prixUnitaireEuro, prixUnitaireDevise As Double
+        Dim situation, dateStock, dateQuai As String
         Dim quantiteCadence As Double
-        Dim dateEcheanceCadence As String
-        Dim dateQuaiCadence As String
-        Dim dateStockCadence As String
+        Dim dateQuaiCadence, dateStockCadence As String
 
         Dim arrayCodeFournisseur = New List(Of String)
         arrayCodeFournisseur.Add("500265")
@@ -47,25 +35,18 @@ Public Class Form1
         Dim CnnAs400 = New Odbc.OdbcConnection(chconnect)
 
         Dim arrayList = New ArrayList()
-        Dim arrayListAllArticlesWithoutCodeFournisseur = New ArrayList()
-        Dim arrayListAllArticlesCodeFournisseur = New ArrayList()
         Dim arrayListArticles = New ArrayList()
-        Dim arrayListArticlesSansHistorique = New ArrayList()
-        Dim arrayListArticlesHistorique = New ArrayList()
         Dim arrayListArticlesDetail = New ArrayList()
-        Dim arrayListAllArticlesDetailWithoutCodeFournisseur = New ArrayList()
-        Dim arrayListAllArticlesDetailCodeFournisseur = New ArrayList()
-        Dim arrayListLigneDetail = New ArrayList()
 
-
+        'Récupération des articles dont la date stock est supérieur au 1er septembre
         Dim strSql = "SELECT POI.ITNBR, POM.VNDNR
                     FROM amflib6.POITEM as POI
                     JOIN amflib6.POMAST as POM on POM.ORDNO = POI.ORDNO
                     WHERE POI.DUEDT > 1210901 and POI.STAIC <> 99"
 
-        Dim Command7 As New OdbcCommand(strSql, CnnAs400)
+        Dim Command As New OdbcCommand(strSql, CnnAs400)
         CnnAs400.Open()
-        Dim RsAs400 = Command7.ExecuteReader()
+        Dim RsAs400 = Command.ExecuteReader()
 
         Do While RsAs400.Read()
             article = RsAs400.GetValue(0).ToString
@@ -77,14 +58,15 @@ Public Class Form1
         CnnAs400.Close()
 
 
+        'Récupération des articles historiques dont la date stock est supérieur au 1er septembre
         strSql = "SELECT POHI.ITNBR, POHS.VNDNR
                 FROM amflib6.POHISTI as POHI
                 JOIN amflib6.POHSTM as POHS on POHS.ORDNO = POHI.ORDNO
                 WHERE POHI.DUEDT > 1210901 and POHI.STAIC <> 99"
 
-        Dim Command8 As New OdbcCommand(strSql, CnnAs400)
+        Dim Command1 As New OdbcCommand(strSql, CnnAs400)
         CnnAs400.Open()
-        RsAs400 = Command8.ExecuteReader()
+        RsAs400 = Command1.ExecuteReader()
 
         Do While RsAs400.Read()
             article = RsAs400.GetValue(0).ToString
@@ -95,14 +77,15 @@ Public Class Form1
         RsAs400.Close()
         CnnAs400.Close()
 
+        'Récupération des cadences dont la date stock est supérieur au 1er septembre
         strSql = "SELECT POB.ITNBR, POM.VNDNR
                 FROM amflib6.POBLKT as POB
                 JOIN amflib6.POMAST as POM on POM.ORDNO = POB.ORDNO
                 WHERE POB.RELDT > 1210901 and POB.STAIC <> 99"
 
-        Dim Command12 As New OdbcCommand(strSql, CnnAs400)
+        Dim Command2 As New OdbcCommand(strSql, CnnAs400)
         CnnAs400.Open()
-        RsAs400 = Command12.ExecuteReader()
+        RsAs400 = Command2.ExecuteReader()
 
         Do While RsAs400.Read()
             article = RsAs400.GetValue(0).ToString
@@ -113,14 +96,16 @@ Public Class Form1
         RsAs400.Close()
         CnnAs400.Close()
 
+
+        'Récupération des cadences historiques dont la date stock est supérieur au 1er septembre
         strSql = "SELECT POHI.ITNBR, POHS.VNDNR
                 FROM amflib6.POHISTB as POHI
                 JOIN amflib6.POHSTM as POHS on POHS.ORDNO = POHI.ORDNO
                 WHERE POHI.RELDT > 1210901 and POHI.STAIC <> 99"
 
-        Dim Command11 As New OdbcCommand(strSql, CnnAs400)
+        Dim Command3 As New OdbcCommand(strSql, CnnAs400)
         CnnAs400.Open()
-        RsAs400 = Command11.ExecuteReader()
+        RsAs400 = Command3.ExecuteReader()
 
         Do While RsAs400.Read()
             article = RsAs400.GetValue(0).ToString
@@ -131,86 +116,40 @@ Public Class Form1
         RsAs400.Close()
         CnnAs400.Close()
 
+        'Parmi l'ensemble des articles, sauvegarde ceux dont le code fournisseur fait parti des 17 codes du tableau 
         For Each value In arrayListArticles
             article = value(0)
-            If Trim(article) = "DST6159231820" Then
-                'MsgBox("OK1")
-            End If
             codeFournisseur = value(1)
             For Each fournisseur In arrayCodeFournisseur
                 If fournisseur = Trim(codeFournisseur) Then
-                    arrayListArticlesDetail.Add(article)
+                    arrayList.Add(article)
                 End If
             Next
         Next
 
-        For j = 0 To arrayListArticlesDetail.Count - 1
-            article = arrayListArticlesDetail(j)
-            If Trim(article) = "DST6159231820" Then
-                'MsgBox("OK2")
-            End If
+        'Supprime les doublons du tableau et enregistre les valeurs dans un nouveau tableau
+        For j = 0 To arrayList.Count - 1
+            article = arrayList(j)
             If article <> "" Then
-                arrayListLigneDetail.Add(article)
+                arrayListArticlesDetail.Add(article)
             End If
-            For x = 0 To arrayListArticlesDetail.Count - 1
-                If article = arrayListArticlesDetail(x) And j <> x Then
-                    arrayListArticlesDetail(x) = ""
+            For x = 0 To arrayList.Count - 1
+                If article = arrayList(x) And j <> x Then
+                    arrayList(x) = ""
                 End If
             Next
         Next
 
-        For Each value In arrayListLigneDetail
-            If Trim(value) = "DST6159231820" Then
-                'MsgBox("OK3")
-            End If
-        Next
-
-
-        For Each value In arrayListLigneDetail
-            'Récupère les colonnes des articles qui sont arrivés en stock au moins 2 fois après le mois de septembre et qui font partis de la liste des 17 codes fournisseur
-            strSql = "SELECT POI.ITNBR, POM.ORDNO, POM.ACTDT, POM.CURID, V.VNAME, POI.QTYOR, POI.BLCOD, POI.QTDEV, 
+        'Boucle sur tous les articles du tableau
+        For Each value In arrayListArticlesDetail
+            'Récupère les colonnes des articles qui sont arrivés en stock au moins 1 fois après le mois de septembre et qui font partis de la liste des 17 codes fournisseur
+            strSql = "SELECT POI.ITNBR, POM.ORDNO, POM.ACTDT, POM.CURID, V.VNAME, POI.QTYOR, POI.QTDEV, 
                         POI.EXTPR, POI.EXTPL, POI.STAIC, POI.DUEDT, POI.DOKDT, POM.VNDNR
                     FROM amflib6.POITEM as POI
                     JOIN amflib6.POMAST as POM on POM.ORDNO = POI.ORDNO
                     JOIN amflib6.VENNAM as V on V.VNDNR = POM.VNDNR
                     WHERE POI.DUEDT > 1210901 and POI.STAIC <> 99 and POI.ITNBR = '" & value & "'
                     ORDER BY POI.ITNBR"
-            Dim Command2 As New OdbcCommand(strSql, CnnAs400)
-            CnnAs400.Open()
-            RsAs400 = Command2.ExecuteReader()
-
-            Do While RsAs400.Read()
-                article = RsAs400.GetValue(0).ToString
-                numeroCommande = RsAs400.GetValue(1).ToString
-                dateCommande = RsAs400.GetValue(2).ToString
-                devise = RsAs400.GetValue(3).ToString
-                nomFournisseur = RsAs400.GetValue(4).ToString
-                quantiteCommandeOrigine = If(RsAs400.GetValue(5).ToString <> "", RsAs400.GetValue(5).ToString, 0)
-                blanketItemCode = RsAs400.GetValue(6).ToString
-                quantiteDeviation = If(RsAs400.GetValue(7).ToString <> "", RsAs400.GetValue(7).ToString, 0)
-                prixUnitaireEuro = If(RsAs400.GetValue(8).ToString <> "", RsAs400.GetValue(8).ToString, 0)
-                prixUnitaireDevise = If(RsAs400.GetValue(9).ToString <> "", RsAs400.GetValue(9).ToString, 0)
-                situation = RsAs400.GetValue(10).ToString
-                dateStock = RsAs400.GetValue(11).ToString
-                dateQuai = RsAs400.GetValue(12).ToString
-                codeFournisseur = RsAs400.GetValue(13).ToString
-
-                Dim arrayLigne = {numeroCommande, nomFournisseur, dateCommande, devise, article, quantiteCommandeOrigine, quantiteDeviation, prixUnitaireEuro, prixUnitaireDevise,
-                                        situation, dateStock, dateQuai, codeFournisseur, ""}
-                arrayList.Add(arrayLigne)
-            Loop
-
-            RsAs400.Close()
-            CnnAs400.Close()
-
-            'Récupération les colonnes des articles ayant été réception au moins 2 fois depuis septembre et qui font parti de la liste des 17 codes fournisseurs
-            strSql = "Select POHI.ITNBR, POHS.ORDNO, POHS.ACTDT, POHS.CURID, V.VNAME, POHI.QTYOR, POHI.BLCOD, POHI.QTDEV, POHI.EXTPR, POHI.EXTPL, POHI.STAIC, POHI.DUEDT, 
-                        POHI.DOKDT, POHS.VNDNR 
-                    FROM amflib6.POHISTI as POHI
-                    JOIN amflib6.POHSTM as POHS on POHS.ORDNO = POHI.ORDNO
-                    JOIN amflib6.VENNAM as V on V.VNDNR = POHS.VNDNR
-                    WHERE POHI.DUEDT > 1210901 and POHI.STAIC <> 99 and POHI.ITNBR = '" & value & "'
-                    ORDER BY POHI.ITNBR"
             Dim Command4 As New OdbcCommand(strSql, CnnAs400)
             CnnAs400.Open()
             RsAs400 = Command4.ExecuteReader()
@@ -222,14 +161,48 @@ Public Class Form1
                 devise = RsAs400.GetValue(3).ToString
                 nomFournisseur = RsAs400.GetValue(4).ToString
                 quantiteCommandeOrigine = If(RsAs400.GetValue(5).ToString <> "", RsAs400.GetValue(5).ToString, 0)
-                blanketItemCode = RsAs400.GetValue(6).ToString
-                quantiteDeviation = If(RsAs400.GetValue(7).ToString <> "", RsAs400.GetValue(7).ToString, 0)
-                prixUnitaireEuro = If(RsAs400.GetValue(8).ToString <> "", RsAs400.GetValue(8).ToString, 0)
-                prixUnitaireDevise = If(RsAs400.GetValue(9).ToString <> "", RsAs400.GetValue(9).ToString, 0)
-                situation = RsAs400.GetValue(10).ToString
-                dateStock = RsAs400.GetValue(11).ToString
-                dateQuai = RsAs400.GetValue(12).ToString
-                codeFournisseur = RsAs400.GetValue(13).ToString
+                quantiteDeviation = If(RsAs400.GetValue(6).ToString <> "", RsAs400.GetValue(6).ToString, 0)
+                prixUnitaireEuro = If(RsAs400.GetValue(7).ToString <> "", RsAs400.GetValue(7).ToString, 0)
+                prixUnitaireDevise = If(RsAs400.GetValue(8).ToString <> "", RsAs400.GetValue(8).ToString, 0)
+                situation = RsAs400.GetValue(9).ToString
+                dateStock = RsAs400.GetValue(10).ToString
+                dateQuai = RsAs400.GetValue(11).ToString
+                codeFournisseur = RsAs400.GetValue(12).ToString
+
+                Dim arrayLigne = {numeroCommande, nomFournisseur, dateCommande, devise, article, quantiteCommandeOrigine, quantiteDeviation, prixUnitaireEuro, prixUnitaireDevise,
+                                        situation, dateStock, dateQuai, codeFournisseur, ""}
+                arrayList.Add(arrayLigne)
+            Loop
+
+            RsAs400.Close()
+            CnnAs400.Close()
+
+            'Récupération les colonnes des articles historique ayant été réception au moins 1 fois depuis septembre et qui font parti de la liste des 17 codes fournisseurs
+            strSql = "Select POHI.ITNBR, POHS.ORDNO, POHS.ACTDT, POHS.CURID, V.VNAME, POHI.QTYOR, POHI.QTDEV, POHI.EXTPR, POHI.EXTPL, POHI.STAIC, POHI.DUEDT, 
+                        POHI.DOKDT, POHS.VNDNR 
+                    FROM amflib6.POHISTI as POHI
+                    JOIN amflib6.POHSTM as POHS on POHS.ORDNO = POHI.ORDNO
+                    JOIN amflib6.VENNAM as V on V.VNDNR = POHS.VNDNR
+                    WHERE POHI.DUEDT > 1210901 and POHI.STAIC <> 99 and POHI.ITNBR = '" & value & "'
+                    ORDER BY POHI.ITNBR"
+            Dim Command5 As New OdbcCommand(strSql, CnnAs400)
+            CnnAs400.Open()
+            RsAs400 = Command5.ExecuteReader()
+
+            Do While RsAs400.Read()
+                article = RsAs400.GetValue(0).ToString
+                numeroCommande = RsAs400.GetValue(1).ToString
+                dateCommande = RsAs400.GetValue(2).ToString
+                devise = RsAs400.GetValue(3).ToString
+                nomFournisseur = RsAs400.GetValue(4).ToString
+                quantiteCommandeOrigine = If(RsAs400.GetValue(5).ToString <> "", RsAs400.GetValue(5).ToString, 0)
+                quantiteDeviation = If(RsAs400.GetValue(6).ToString <> "", RsAs400.GetValue(6).ToString, 0)
+                prixUnitaireEuro = If(RsAs400.GetValue(7).ToString <> "", RsAs400.GetValue(7).ToString, 0)
+                prixUnitaireDevise = If(RsAs400.GetValue(8).ToString <> "", RsAs400.GetValue(8).ToString, 0)
+                situation = RsAs400.GetValue(9).ToString
+                dateStock = RsAs400.GetValue(10).ToString
+                dateQuai = RsAs400.GetValue(11).ToString
+                codeFournisseur = RsAs400.GetValue(12).ToString
 
                 Dim arrayLigne = {numeroCommande, nomFournisseur, dateCommande, devise, article, quantiteCommandeOrigine, quantiteDeviation, prixUnitaireEuro, prixUnitaireDevise,
                                         situation, dateStock, dateQuai, codeFournisseur, ""}
@@ -240,16 +213,16 @@ Public Class Form1
             CnnAs400.Close()
 
 
-            'Récupère les colonnes des articles qui sont arrivés en stock au moins 2 fois après le mois de septembre et qui font partis de la liste des 17 codes fournisseur
+            'Récupère les colonnes des cadences des articles qui sont arrivés en stock au moins 1 fois après le mois de septembre et qui font partis de la liste des 17 codes fournisseur
             strSql = "SELECT POB.ITNBR, POB.ORDNO, POB.RELQT, POB.RELDT, POB.STAIC, POB.DOKDT, POB.EXTPR, POB.EXTPL, V.VNDNR, V.VNAME, POM.CURID, POM.ACTDT
                     FROM amflib6.POBLKT as POB
                     JOIN amflib6.POMAST as POM on POM.ORDNO = POB.ORDNO
                     JOIN amflib6.VENNAM as V on V.VNDNR = POM.VNDNR
                     WHERE POB.DOKDT > 1210901 and POB.STAIC <> 99 and POB.ITNBR = '" & value & "'
                     ORDER BY POB.ITNBR"
-            Dim Command9 As New OdbcCommand(strSql, CnnAs400)
+            Dim Command6 As New OdbcCommand(strSql, CnnAs400)
             CnnAs400.Open()
-            RsAs400 = Command9.ExecuteReader()
+            RsAs400 = Command6.ExecuteReader()
 
             Do While RsAs400.Read()
                 article = RsAs400.GetValue(0).ToString
@@ -274,16 +247,16 @@ Public Class Form1
             CnnAs400.Close()
 
 
-            'Récupère les colonnes des articles qui sont arrivés en stock au moins 2 fois après le mois de septembre et qui font partis de la liste des 17 codes fournisseur
+            'Récupère les colonnes des cadences historiques qui sont arrivés en stock au moins 1 fois après le mois de septembre et qui font partis de la liste des 17 codes fournisseur
             strSql = "SELECT POHI.ITNBR, POHI.ORDNO, POHI.RELQT, POHI.RELDT, POHI.STAIC, POHI.DOKDT, POHI.EXTPR, POHI.EXTPL, V.VNDNR, V.VNAME, POHS.CURID, POHS.ACTDT
                     FROM amflib6.POHISTB as POHI
                     JOIN amflib6.POHSTM as POHS on POHS.ORDNO = POHI.ORDNO
                     JOIN amflib6.VENNAM as V on V.VNDNR = POHS.VNDNR
                     WHERE POHI.DOKDT > 1210901 and POHI.STAIC <> 99 and POHI.ITNBR = '" & value & "'
                     ORDER BY POHI.ITNBR"
-            Dim Command10 As New OdbcCommand(strSql, CnnAs400)
+            Dim Command7 As New OdbcCommand(strSql, CnnAs400)
             CnnAs400.Open()
-            RsAs400 = Command10.ExecuteReader()
+            RsAs400 = Command7.ExecuteReader()
 
             Do While RsAs400.Read()
                 article = RsAs400.GetValue(0).ToString
@@ -333,9 +306,6 @@ Public Class Form1
             xlsfeuille.Cells(i, 12) = value(10)
             xlsfeuille.Cells(i, 13) = value(11)
             i += 1
-            If i = 10 Then
-                MsgBox(i)
-            End If
             If i = 100 Then
                 MsgBox(i)
             End If
